@@ -20,7 +20,7 @@ fn show_off(d) {
 print("That's {show_off(dog)} tricks. Good boy.");
 ```
 
-Rambo is named after my dog.
+Named after my dog, Rambo. Unlike its namesake, it cleans up after itself.
 
 ## Features
 
@@ -37,10 +37,10 @@ You need [Rust](https://rustup.rs).
 
 ```bash
 cargo build --release
-./target/release/rambo examples/hello.rmb      # run a program
-./target/release/rambo                         # interactive REPL
+./target/release/rambo examples/hello.rmb          # run a program
+./target/release/rambo                             # interactive REPL
 ./target/release/rambo dis examples/closures.rmb   # show the bytecode
-cargo test                                      # run the test suite
+cargo test                                         # run the test suite
 ```
 
 On Windows, the binary is `target\release\rambo.exe`.
