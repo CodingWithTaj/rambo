@@ -1,0 +1,23 @@
+// Sieve of Eratosthenes
+fn primes_below(n) {
+    let is_prime = [];
+    for i in 0..n { push(is_prime, true); }
+    is_prime[0] = false;
+    is_prime[1] = false;
+    let p = 2;
+    while p * p < n {
+        if is_prime[p] {
+            let m = p * p;
+            while m < n {
+                is_prime[m] = false;
+                m += p;
+            }
+        }
+        p += 1;
+    }
+    return filter(range(n), fn(i) { return is_prime[i]; });
+}
+
+let ps = primes_below(100);
+print("{len(ps)} primes below 100:");
+print(join(ps, " "));

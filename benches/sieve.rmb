@@ -1,0 +1,14 @@
+fn sieve(n) {
+    let flags = [];
+    for i in 0..n { push(flags, true); }
+    let count = 0;
+    for i in 2..n {
+        if flags[i] {
+            count = count + 1;
+            let m = i * i;
+            while m < n { flags[m] = false; m = m + i; }
+        }
+    }
+    return count;
+}
+print(sieve(2000000));

@@ -1,0 +1,20 @@
+// Welcome to Rambo! Click any line to see the bytecode it compiles to,
+// or press Debug to step through it one line at a time.
+
+let name = "Rambo";
+let tricks = ["sit", "shake", "roll over"];
+
+print("Hello from {name}!");
+print("{name} knows {len(tricks)} tricks: {join(tricks, ", ")}");
+
+let total = 0;
+for i in 1..11 {
+    total += i;
+}
+print("The sum of 1 to 10 is {total}");
+
+if total > 50 && name == "Rambo" {
+    print("Good boy!");
+} else {
+    print("Keep practising.");
+}

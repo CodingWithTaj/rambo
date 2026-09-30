@@ -1,0 +1,11 @@
+fn counter() {
+    let n = 0;
+    return fn() { n = n + 1; return n; };
+}
+fn run() {
+    let c = counter();
+    let last = 0;
+    for i in 0..2000000 { last = c(); }
+    return last;
+}
+print(run());

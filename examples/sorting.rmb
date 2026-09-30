@@ -1,0 +1,17 @@
+// Quicksort, written recursively. Returns a new sorted list.
+fn quicksort(xs) {
+    if len(xs) <= 1 { return xs; }
+    let pivot = xs[0];
+    let less = [];
+    let more = [];
+    for x in slice(xs, 1) {
+        if x < pivot { push(less, x); } else { push(more, x); }
+    }
+    return quicksort(less) + [pivot] + quicksort(more);
+}
+
+print(quicksort([38, 27, 43, 3, 9, 82, 10, 3]));
+print(quicksort(["pear", "apple", "fig", "banana"]));
+
+// The built-in sort agrees:
+print(sort([38, 27, 43, 3, 9, 82, 10, 3]));

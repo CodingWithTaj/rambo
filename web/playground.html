@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rambo playground</title>
+<meta name="description" content="Write, run and step through Rambo programs in your browser.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<!--SITE_CSS-->
+<style>
+html, body { height: 100%; }
+body { display: flex; flex-direction: column; }
+.tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 24px; border-bottom: 1px solid var(--line); }
+.tools select { font: 500 14px var(--sans); padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); color: var(--ink); }
+.tools .group { display: flex; gap: 4px; }
+.tools .sep { width: 1px; height: 24px; background: var(--line); margin: 0 6px; }
+.tools .hint { margin-left: auto; font-size: 13px; color: var(--muted); }
+kbd { font-size: 12px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--surface); }
+main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+
+/* editor */
+.editor { position: relative; display: flex; min-height: 0; background: var(--surface); border-right: 1px solid var(--line); font: 14.5px/1.6 var(--mono); }
+.gutter { flex: none; width: 52px; overflow: hidden; background: var(--paper); border-right: 1px solid var(--line); user-select: none; padding: 14px 0; color: var(--muted); }
+.gutter div { height: calc(14.5px * 1.6); line-height: calc(14.5px * 1.6); padding-right: 10px; text-align: right; cursor: pointer; position: relative; font-size: 12.5px; }
+.gutter div:hover { color: var(--ink); }
+.gutter div.bp::before { content: ""; position: absolute; left: 9px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--bad); }
+.gutter div.cur { color: var(--ink); font-weight: 600; }
+.code { position: relative; flex: 1; min-width: 0; }
+.code pre, .code textarea { position: absolute; inset: 0; margin: 0; padding: 14px 16px; font: inherit; white-space: pre; overflow: auto; tab-size: 4; border: 0; }
+.code pre { pointer-events: none; color: var(--ink); overflow: hidden; }
+.code pre .ln { min-height: 1.6em; margin: 0 -16px; padding: 0 16px; }
+.code pre .ln.cur { background: var(--tan-soft); box-shadow: inset 3px 0 var(--tan); }
+.code pre .ln.bad { background: color-mix(in srgb, var(--bad) 12%, transparent); box-shadow: inset 3px 0 var(--bad); }
+.code textarea { background: transparent; color: transparent; caret-color: var(--ink); resize: none; outline: none; }
+.code textarea::selection { background: color-mix(in srgb, var(--collar) 28%, transparent); color: transparent; }
+.code textarea[readonly] { cursor: default; }
+
+/* side panel */
+.panel { display: flex; flex-direction: column; min-height: 0; }
+.tabs { display: flex; gap: 2px; padding: 8px 16px 0; border-bottom: 1px solid var(--line); }
+.tabs button { font: 600 14px var(--sans); background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); padding: 8px 12px; cursor: pointer; margin-bottom: -1px; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--collar); }
+.view { flex: 1; overflow: auto; padding: 16px 20px; min-height: 0; }
+.view[hidden] { display: none; }
+.status { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.console { font: 14px/1.55 var(--mono); white-space: pre-wrap; margin: 0; }
+.console .err { color: var(--bad); }
+.dis { font: 13px/1.5 var(--mono); white-space: pre; margin: 0; }
+.dis .hdr { color: var(--collar); font-weight: 600; }
+.dis .note { color: var(--c); }
+.dis .here { background: var(--tan-soft); box-shadow: inset 3px 0 var(--tan); display: inline-block; min-width: 100%; }
+.empty { color: var(--muted); max-width: 42ch; }
+.dbg h4 { font-size: 13px; font-weight: 700; color: var(--muted); margin: 18px 0 6px; }
+.dbg h4:first-child { margin-top: 0; }
+.where { font-size: 15px; }
+.where code { background: var(--sunk); padding: 2px 6px; border-radius: 4px; }
+.frame { border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); margin-bottom: 8px; }
+.frame.top { border-color: var(--tan); }
+.frame .name { font-weight: 700; padding: 6px 10px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.frame .name span { font-weight: 400; color: var(--muted); }
+.vars { width: 100%; border-collapse: collapse; font: 13px/1.45 var(--mono); }
+.vars td { padding: 3px 10px; vertical-align: top; border-top: 1px solid var(--sunk); }
+.vars td:first-child { color: var(--f); width: 1%; white-space: nowrap; }
+.vars td:last-child { word-break: break-word; }
+.vars .cap td:first-child::after { content: " (captured)"; color: var(--muted); }
+.vars .none td { color: var(--muted); font-family: var(--sans); }
+.stack { display: flex; flex-wrap: wrap; gap: 4px; font: 13px var(--mono); }
+.stack span { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 1px 7px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stack span:last-child { border-color: var(--collar); }
+.meta { font-size: 13px; color: var(--muted); }
+@media (max-width: 860px) {
+  main { grid-template-columns: 1fr; grid-template-rows: 55vh auto; }
+  .editor { border-right: 0; border-bottom: 1px solid var(--line); }
+  .tools .hint { display: none; }
+}
+</style>
+</head>
+<body>
+<header class="bar"><div class="bar-inner">
+  <a class="mark" href="../index.html">rambo<small>playground</small></a>
+  <nav><a href="../docs/getting-started.html">Docs</a><a href="../docs/stdlib.html">Library</a><a href="https://github.com/CodingWithTaj/rambo">GitHub</a></nav>
+</div></header>
+
+<div class="tools" role="toolbar" aria-label="Program controls">
+  <label class="visually-hidden" for="examples" style="position:absolute;left:-9999px">Example program</label>
+  <select id="examples"></select>
+  <button class="btn primary" id="run" title="Run (Ctrl+Enter)">Run</button>
+  <span class="sep"></span>
+  <button class="btn" id="debug" title="Debug: pause at the first line">Debug</button>
+  <span class="group">
+    <button class="btn" id="step" title="Step into (F11)" disabled>Step</button>
+    <button class="btn" id="over" title="Step over (F10)" disabled>Over</button>
+    <button class="btn" id="out" title="Step out (Shift+F11)" disabled>Out</button>
+    <button class="btn" id="cont" title="Continue to the next breakpoint (F8)" disabled>Continue</button>
+  </span>
+  <span class="hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> runs. Click a line number to set a breakpoint.</span>
+</div>
+
+<main>
+  <div class="editor">
+    <div class="gutter" id="gutter" aria-label="Line numbers. Click to toggle a breakpoint."></div>
+    <div class="code">
+      <pre id="hl" aria-hidden="true"></pre>
+      <textarea id="src" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Program source"></textarea>
+    </div>
+  </div>
+  <section class="panel">
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-view="output">Output</button>
+      <button role="tab" aria-selected="false" data-view="bytecode">Bytecode</button>
+      <button role="tab" aria-selected="false" data-view="debugger">Debugger</button>
+    </div>
+    <div class="view" id="output" role="tabpanel"><div class="status" id="status">Loading the Rambo VM…</div><pre class="console" id="console"></pre></div>
+    <div class="view" id="bytecode" role="tabpanel" hidden><pre class="dis" id="dis"></pre></div>
+    <div class="view dbg" id="debugger" role="tabpanel" hidden><p class="empty" id="dbgEmpty">Press <strong>Debug</strong> to pause before the first line, then step through the program and watch its variables change. Click a line number to add a breakpoint, and <strong>Continue</strong> will run until it gets there.</p><div id="dbgState"></div></div>
+  </section>
+</main>
+
+<!--BOOT-->
+<!--RAMBO_JS-->
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const src = $("src"), hl = $("hl"), gutter = $("gutter");
+  const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const examples = window.RAMBO_EXAMPLES || [];
+  const breakpoints = new Set();
+  let session = null;      // debugger state while debugging
+  let errorLine = 0;
+
+  // ---------- editor ----------
+  function render() {
+    const text = src.value;
+    const lines = Rambo.highlight(text + (text.endsWith("\n") ? " " : "")).split("\n");
+    const cur = session && session.status === "paused" ? session.line : 0;
+    hl.innerHTML = lines.map((l, i) => {
+      const n = i + 1, cls = n === cur ? " cur" : n === errorLine ? " bad" : "";
+      return '<div class="ln' + cls + '">' + (l || " ") + "</div>";
+    }).join("");
+    gutter.innerHTML = lines.map((_, i) => {
+      const n = i + 1, cls = (breakpoints.has(n) ? "bp " : "") + (n === cur ? "cur" : "");
+      return '<div class="' + cls + '" data-line="' + n + '">' + n + "</div>";
+    }).join("");
+    sync();
+  }
+  function sync() { hl.scrollTop = src.scrollTop; hl.scrollLeft = src.scrollLeft; gutter.scrollTop = src.scrollTop; }
+  src.addEventListener("scroll", sync);
+  src.addEventListener("input", () => { errorLine = 0; render(); save(); refreshBytecode(); });
+  src.addEventListener("keydown", (e) => {
+    if (e.key === "Tab" && !e.shiftKey && !src.readOnly) {
+      e.preventDefault(); document.execCommand("insertText", false, "    ");
+    } else if (e.key === "Enter" && !src.readOnly && !(e.ctrlKey || e.metaKey)) {
+      // keep the indentation of the current line, one level deeper after "{"
+      const before = src.value.slice(0, src.selectionStart);
+      const line = before.slice(before.lastIndexOf("\n") + 1);
+      let indent = line.match(/^\s*/)[0];
+      if (/\{\s*$/.test(line)) indent += "    ";
+      e.preventDefault(); document.execCommand("insertText", false, "\n" + indent);
+    }
+  });
+  gutter.addEventListener("click", (e) => {
+    const n = +e.target.dataset.line;
+    if (!n) return;
+    breakpoints.has(n) ? breakpoints.delete(n) : breakpoints.add(n);
+    if (session) Rambo.setBreakpoints([...breakpoints]);
+    render();
+  });
+  function save() { try { localStorage.setItem("rambo:draft", src.value); } catch (_) {} }
+
+  // ---------- tabs ----------
+  function showTab(name) {
+    document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.view === name)));
+    document.querySelectorAll(".view").forEach((v) => (v.hidden = v.id !== name));
+    if (name === "bytecode") refreshBytecode();
+  }
+  document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.view)));
+
+  // ---------- running ----------
+  function showResult(r, ms) {
+    errorLine = r.ok ? 0 : r.line;
+    $("console").innerHTML = Rambo.outputHtml(r);
+    $("status").textContent = r.ok
+      ? "Finished in " + ms.toFixed(1) + " ms, " + r.steps.toLocaleString() + " instructions."
+      : "Stopped with an error" + (r.line ? " on line " + r.line : "") + ".";
+    render();
+  }
+  function run() {
+    if (session) stopDebug();
+    const t = performance.now();
+    const r = Rambo.run(src.value);
+    showResult(r, performance.now() - t);
+    showTab("output");
+  }
+
+  let bytecodeFor = null;
+  function refreshBytecode() {
+    if ($("bytecode").hidden || !window.Rambo || !Rambo._loaded) return;
+    if (bytecodeFor !== src.value) {
+      bytecodeFor = src.value;
+      const r = Rambo.disassemble(src.value);
+      $("dis").innerHTML = r.ok
+        ? esc(r.output).split("\n").map((l) => {
+            if (l.startsWith("==")) return '<span class="hdr">' + l + "</span>";
+            const i = l.indexOf("; ");
+            return i < 0 ? l : l.slice(0, i) + '<span class="note">' + l.slice(i) + "</span>";
+          }).join("\n")
+        : '<span class="err" style="color:var(--bad)">' + esc(r.output) + "</span>";
+    }
+    markInstruction();
+  }
+  function markInstruction() {
+    const dis = $("dis");
+    dis.querySelectorAll(".here").forEach((e) => e.classList.remove("here"));
+    if (!session || session.status !== "paused") return;
+    // find the "== fn ==" section, then the line with this instruction number
+    const lines = dis.innerHTML.split("\n");
+    let inFn = false;
+    const ip = String(session.ip).padStart(4, "0");
+    for (let i = 0; i < lines.length; i++) {
+      const plain = lines[i].replace(/<[^>]+>/g, "");
+      if (plain.startsWith("==")) { inFn = plain.startsWith("== " + esc(session.fn) + " ("); continue; }
+      if (inFn && plain.startsWith(ip + " ")) { lines[i] = '<span class="here">' + lines[i] + "</span>"; break; }
+    }
+    dis.innerHTML = lines.join("\n");
+    const here = dis.querySelector(".here");
+    if (here) here.scrollIntoView({ block: "nearest" });
+  }
+
+  // ---------- debugging ----------
+  const buttons = ["step", "over", "out", "cont"];
+  function setDebugUi(on) {
+    buttons.forEach((b) => ($(b).disabled = !on));
+    $("debug").textContent = on ? "Stop" : "Debug";
+    src.readOnly = on;
+  }
+  function startDebug() {
+    errorLine = 0;
+    const s = Rambo.debugStart(src.value);
+    if (s.status === "error") { showDebug(s); return; }
+    Rambo.setBreakpoints([...breakpoints]);
+    setDebugUi(true);
+    showDebug(s);
+    showTab("debugger");
+  }
+  function stopDebug() {
+    Rambo.debugStop();
+    session = null;
+    setDebugUi(false);
+    render();
+    markInstruction();
+  }
+  function step(mode) {
+    if (!session) return;
+    showDebug(Rambo.debugStep(mode));
+  }
+  function vars(list, cls) {
+    return list.map(([k, v]) => '<tr class="' + (cls || "") + '"><td>' + esc(k) + "</td><td>" + esc(v) + "</td></tr>").join("");
+  }
+  function showDebug(s) {
+    session = s;
+    const box = $("dbgState");
+    $("dbgEmpty").hidden = true;
+    let html = "";
+    if (s.status === "paused") {
+      html += '<p class="where">Paused on line <strong>' + s.line + "</strong> in <strong>" + esc(s.fn) + "</strong>. Next instruction: <code>" + esc(s.op) + "</code></p>";
+      if (s.note) html += '<p class="meta">' + esc(s.note) + "</p>";
+    } else if (s.status === "finished") {
+      html += '<p class="where">The program finished.</p>';
+    } else {
+      html += '<p class="where" style="color:var(--bad)">The program stopped with an error.</p><pre class="console err" style="color:var(--bad)">' + esc(s.error) + "</pre>";
+      errorLine = s.errorLine || 0;
+    }
+    if (s.frames && s.frames.length) {
+      html += "<h4>Call stack</h4>";
+      s.frames.forEach((f, i) => {
+        const rows = vars(f.locals) + vars(f.captured, "cap");
+        html += '<div class="frame' + (i === 0 ? " top" : "") + '"><div class="name">' + esc(f.name) + " <span>line " + f.line + "</span></div>" +
+          '<table class="vars">' + (rows || '<tr class="none"><td colspan="2">No local variables yet</td></tr>') + "</table></div>";
+      });
+      html += "<h4>Value stack</h4>" + (s.stack.length ? '<div class="stack">' + s.stack.map((v) => "<span>" + esc(v) + "</span>").join("") + "</div>" : '<p class="meta">Empty</p>');
+    }
+    if (s.globals && s.globals.length) html += '<h4>Globals</h4><div class="frame"><table class="vars">' + vars(s.globals) + "</table></div>";
+    if (s.output !== undefined) html += '<h4>Output</h4><pre class="console">' + (esc(s.output) || '<span class="meta">Nothing printed yet</span>') + "</pre>";
+    if (s.heap) html += '<p class="meta">' + s.steps.toLocaleString() + " instructions run. Heap: " + s.heap.live + " live objects, " + s.heap.collections + " collections.</p>";
+    box.innerHTML = html;
+    if (s.output !== undefined) $("console").innerHTML = esc(s.output) + (s.error ? '<span class="err">' + esc(s.error) + "</span>" : "");
+    if (s.status !== "paused") { setDebugUi(false); session = null; }
+    render();
+    markInstruction();
+    if (s.status === "paused") {
+      const line = hl.children[s.line - 1];
+      if (line && (line.offsetTop < src.scrollTop || line.offsetTop > src.scrollTop + src.clientHeight - 40)) src.scrollTop = line.offsetTop - 60;
+    }
+  }
+
+  $("run").addEventListener("click", run);
+  $("debug").addEventListener("click", () => (session ? stopDebug() : startDebug()));
+  $("step").addEventListener("click", () => step(1));
+  $("over").addEventListener("click", () => step(2));
+  $("out").addEventListener("click", () => step(3));
+  $("cont").addEventListener("click", () => step(4));
+  document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); run(); }
+    else if (session && e.key === "F10") { e.preventDefault(); step(2); }
+    else if (session && e.key === "F11") { e.preventDefault(); step(e.shiftKey ? 3 : 1); }
+    else if (session && e.key === "F8") { e.preventDefault(); step(4); }
+  });
+
+  // ---------- examples ----------
+  const pick = $("examples");
+  examples.forEach((ex, i) => pick.add(new Option(ex.name, i)));
+  pick.add(new Option("Your draft", "draft"));
+  pick.addEventListener("change", () => {
+    if (session) stopDebug();
+    if (pick.value !== "draft") src.value = examples[pick.value].code;
+    else { try { src.value = localStorage.getItem("rambo:draft") || ""; } catch (_) {} }
+    errorLine = 0; breakpoints.clear(); $("console").textContent = ""; $("status").textContent = "";
+    render(); refreshBytecode();
+  });
+
+  // starting program: a link from the docs, else the saved draft, else the first example
+  let start = null;
+  if (location.hash.startsWith("#code=")) { start = decodeURIComponent(location.hash.slice(6)); pick.value = "draft"; }
+  if (start === null) { try { const d = localStorage.getItem("rambo:draft"); if (d) { start = d; pick.value = "draft"; } } catch (_) {} }
+  if (start === null && examples.length) start = examples[0].code;
+  src.value = start || "";
+  render();
+
+  Rambo.ready.then(() => {
+    Rambo._loaded = true;
+    $("status").textContent = "Ready. Press Run to start.";
+  }).catch((e) => {
+    $("status").textContent = "The Rambo VM couldn't load: " + (e.message || e) + ". If you opened this file directly from disk, serve the folder instead (python -m http.server).";
+    ["run", "debug"].forEach((b) => ($(b).disabled = true));
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+[package]
+name = "rambo"
+version = "0.2.0"
+edition = "2021"
+description = "Rambo: a small, fast scripting language with a bytecode VM, garbage collector, and in-browser debugger"
+license = "MIT"
+readme = "README.md"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "rambo"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

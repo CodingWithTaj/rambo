@@ -1,0 +1,13 @@
+// Runtime errors point at the exact spot and show the call stack.
+fn average(xs) {
+    return total(xs) / len(xs);
+}
+
+fn total(xs) {
+    let sum = 0;
+    for x in xs { sum += x; }
+    return sum;
+}
+
+print(average([4, 8, 15]));
+print(average([]));   // division by zero

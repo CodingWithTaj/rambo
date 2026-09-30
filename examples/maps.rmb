@@ -1,0 +1,31 @@
+// Maps store values by key. Keys that look like names can use dot syntax.
+let rambo = {
+    name: "Rambo",
+    breed: "mixed",
+    age: 4,
+    tricks: ["sit", "shake"],
+};
+
+print(rambo.name, "is", rambo.age, "years old");
+rambo.age += 1;
+push(rambo.tricks, "play dead");
+rambo["favourite toy"] = "tennis ball";   // any string works with brackets
+
+for key in rambo {
+    print("  {key}: {rambo[key]}");
+}
+
+// Counting words with a map
+let text = "the dog chased the ball and the dog won";
+let counts = {};
+for word in split(text, " ") {
+    if has(counts, word) {
+        counts[word] += 1;
+    } else {
+        counts[word] = 1;
+    }
+}
+print(counts);
+
+let top = sort_by(items(counts), fn(pair) { return -pair[1]; });
+print("most common word: \"{top[0][0]}\" ({top[0][1]} times)");

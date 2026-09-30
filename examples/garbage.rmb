@@ -1,0 +1,16 @@
+// Rambo has a mark-and-sweep garbage collector. Even objects that point
+// to themselves (which reference counting can never free) get cleaned up.
+fn make_loop() {
+    let node = { name: "node", next: nil };
+    node.next = node;          // a cycle: the node points at itself
+    return node;
+}
+
+for i in 0..50000 {
+    make_loop();               // created, then immediately unreachable
+}
+gc();
+let stats = memory();
+print("objects still alive: {stats.live}");
+print("collections run:     {stats.collections}");
+print("objects freed:       {stats.freed}");

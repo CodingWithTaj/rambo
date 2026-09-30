@@ -1,0 +1,12 @@
+// Recursive fibonacci: a classic benchmark for function calls
+fn fib(n) {
+    if n < 2 { return n; }
+    return fib(n - 1) + fib(n - 2);
+}
+
+let start = clock();
+for i in 0..21 {
+    if i % 5 == 0 { print("fib({i}) = {fib(i)}"); }
+}
+print("fib(25) = {fib(25)}");
+print("took {round((clock() - start) * 1000)} ms");

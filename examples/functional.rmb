@@ -1,0 +1,20 @@
+// map, filter, reduce and friends come built in (they're written in
+// Rambo itself; see the prelude in src/natives.rs).
+let nums = range(1, 11);
+
+let squares = map(nums, fn(n) { return n * n; });
+let evens = filter(squares, fn(n) { return n % 2 == 0; });
+let total = reduce(evens, fn(acc, n) { return acc + n; }, 0);
+
+print("squares:      {squares}");
+print("even squares: {evens}");
+print("their sum:    {total}");
+print("any over 50?  {any(squares, fn(n) { return n > 50; })}");
+
+let dogs = [
+    { name: "Rambo", age: 4 },
+    { name: "Biscuit", age: 2 },
+    { name: "Max", age: 9 },
+];
+let by_age = sort_by(dogs, fn(d) { return d.age; });
+print("youngest first:", map(by_age, fn(d) { return d.name; }));
